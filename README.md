@@ -1,98 +1,132 @@
-# CarND-Controls-PID
-Self-Driving Car Engineer Nanodegree Program
+# PID-Controller
+Proportional Integral Derivative algorithm to smoothly control a car's direction and velocity through steering angle and throttle actuators.
 
----
+![PIDController](images/PIDController.gif)
 
-## Dependencies
+Let's say you are driving on the right hand side of your lane and you want to get centered in the middle. How do you steer? Do you just steer left until you got to the middle and than you stop steering? 
 
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1(mac, linux), 3.81(Windows)
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `./install-mac.sh` or `./install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
-    Some function signatures have changed in v0.14.x. See [this PR](https://github.com/udacity/CarND-MPC-Project/pull/3) for more details.
-* Simulator. You can download these from the [project intro page](https://github.com/udacity/self-driving-car-sim/releases) in the classroom.
+Do the test! You'll become aware that you have a PID controller embedded in your instincts. At the beginning you steer harder to the left to get your car going towards the middle of the lane. Before you get there you steer right to align the car to the road again. In conclusion, you steer both left and right for this maneuver. 
 
-Fellow students have put together a guide to Windows set-up for the project [here](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/files/Kidnapped_Vehicle_Windows_Setup.pdf) if the environment you have set up for the Sensor Fusion projects does not work for this project. There's also an experimental patch for windows in this [PR](https://github.com/udacity/CarND-PID-Control-Project/pull/3).
+[PID](https://en.wikipedia.org/wiki/PID_controller) is one of the most popular control algorithms, it's a hundred years old and it is still used because it gets the job done.
 
-## Basic Build Instructions
+In this project I implemented two PID controllers to drive the car around the lake track.
+The project is implemented in C++ the source code can be found in the *src* folder above. The PID class is implemented under PID.h and PID.cpp. The steering angle and throttle values are calculated under h.onMessage function in main.cpp
+The sterter code for this project is provided by Udacity and can be found [here](https://github.com/udacity/CarND-PID-Control-Project).
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./pid`. 
+## What Is PID?
 
-Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
+PID is a closed loop feedback controller that produces a control value based on the error between the current state of the system and the desired state.
 
-## Editor Settings
+![PIDeq](images/PIDeq.JPG) 
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+In the equation above e(t) is the error. Let's say the car's desired position is in the middle of the lane and the car's current position is 2m to the right. The error in this case is 2m. 
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+Kp is the proportional gain. Using Kp the car will steer left while moving forward down the road. The steering value will be large at the begining as the error is large. As the car approaches the desired centered position, the steering angle approaches zero. When the car is in the middle of the road the steering angle is zero, but the car will keep going left since it is still slightly facing that way.
+The Kp component of the controller helps steer the car in the correct direction, but using only Kp in an inertial system as a car, leads to haveing an overshoot. In this manner, the car will drive in a S shape along the desired trajectory.
 
-## Code Style
+Kd is the derivative gain. It is used together with Kp to compensate for the overshoot. de(t)/dt is the derivate of the error. As the error gets smaller in time, the derivative is negative. The faster the car is approaching the center of the road, the stronger the derivative effect. When the error gets smaller, Kd will overpower Kp effect and the car will start steering in the opposite direction to get alligned with the road. 
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+Ki is the integral gain. In a discrete system as an embedded ECU, this is calculated as the sum of the error over time. The integral is used if a control value is needed to keep the system in the desired state i.e. when the error is zero. For a well calibrated direction system in a car, the integral component is not needed when controlling the car's trajectory through the steering angle, as on a straight line the car should be able to drive holding its steering angle at zero. 
+For controlling the velocity on the other hand, the integral is needed because we still need the throttle value to keep going at 30MPH for example, even if the car's speed is already 30MPH. 
 
-## Project Instructions and Rubric
+## PID Implementation
+The PID controller is implemented using the PID class. 
+Total error is used to calculate the control value in a similar way as the equation from above.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+```
+double PID::TotalError() {
+  /**
+   * TODO: Calculate and return the total error
+   */
+  double total_error;
+  total_error = Kp * p_error + Kd * d_error + Ki * i_error;
+  //std::cout<<"The composition of steering angle is: "<<std::endl;
+  //std::cout<<"Kp "<< Kp <<" * p_error "<<p_error<<" + Kd "<< Kd <<" * d_error " << d_error <<"= "<<total_error<<std::endl;
+  return total_error;  // TODO: Add your total error calc here!
+}
+```
+Printing out the decomposition of the control value is useful for debuging when choosing the right Kp, Kd and Ki values.
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
+The p_error, i_error and d_error are calculated below. The p_error is the straight value taken from the feedback loop. It represent the diference between the desired system state and its current state.
+d_error or the derivate, is simply the substractio between the previous error and the current one. i_error or the integral, is the sum of errors over time.
 
-## Hints!
+```
+void PID::UpdateError(double cte) {
+  /**
+   * TODO: Update PID errors based on cte.
+   */
+  i_error += cte;
+  d_error = cte - p_error; //it can be initialized with CTE value because the simulator is responsive only after 2 cycles
+  p_error = cte;
+}
+```
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
 
-## Call for IDE Profiles Pull Requests
+## Controlling The Direction
+The first controller of this project is the one that through the steering angle, makes the car drive along the road as close as possible to its center.
 
-Help your fellow students!
+At the beginning I set the steering angle to a hardcoded value of zero and launched the simulator to see if the car goes straignt. I noticed that the steering angle was correctly set to zero, no deviation and the car seemed (visually) to be driving straingt. This is how I decided that for the direction control, the integral component is not needed.
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+For the Kp and Kd values, one needs to know the dynamics of the process to be able to calculate them. The car is approximated to a bycicle and the equations are already given in the Udacity class.
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+```
+        # Execute motion
+        turn = np.tan(steering) * distance / self.length
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+        if abs(turn) < tolerance:
+            # approximate by straight line motion
+            self.x += distance * np.cos(self.orientation)
+            self.y += distance * np.sin(self.orientation)
+            self.orientation = (self.orientation + turn) % (2.0 * np.pi)
+        else:
+            # approximate bicycle model for motion
+            radius = distance / turn
+            cx = self.x - (np.sin(self.orientation) * radius)
+            cy = self.y + (np.cos(self.orientation) * radius)
+            self.orientation = (self.orientation + turn) % (2.0 * np.pi)
+            self.x = cx + (np.sin(self.orientation) * radius)
+            self.y = cy - (np.cos(self.orientation) * radius)
+```
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+I changed the vehicle's length to 4 meters and used the motion model in the class to tune the Kp and Kd paramaters.
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+![PD4m](images/PD4m.JPG) 
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+Kp = 0.5 and Kd = 2.5 seem to provide a good vehicle trajectory in following a reference line.
+![PD0525worksonplotunstabledriving](images/PD0525worksonplotunstabledriving.JPG)
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+I plugged these values into the implementation and started the simulator. The vehicle was very unstable, the oscilations were strong and the car was not even able to drive on a straight line.
 
+This behavior was very surprising since the results looked good on the graph. Then, I realized that the car was steering with an angle in between -25deg and +25deg when the control values were given between -1rad and 1rad corresponding to -57deg and +57deg.
+
+Then I monitored the control values and the actuator values in debug to see what is happening.
+
+![Factor](images/Factor.JPG)
+
+And here is the problem. The car does not steer with the controller provided value and it has a 2/3 reducing factor.
+
+I integrated this factor in the vehicle's dymanic model and confirmed that this is the source of the unexpected oscilations.
+
+![PD0525fact23](images/PD0525fact23.JPG)
+
+With this updated vehicle model, I chose to increase the Kd value to compensate the overshooting.
+I chose Kp = 0.5 as before and increased Kd = 3.5
+
+![PD0535fact23straightokunstableincurves](images/PD0535fact23straightokunstableincurves.JPG)
+
+Got the simulator running and this time the car is able to follow a straight line trajectory. This is a great result!
+The remaining problem is that it becomes very unstable in curves. I took a look of how the control value is calculated and realized that such a big Kd induces the instability. When driving into a curve, the error grows very fast making the Kd component built a lot on top of Kp and results in oversteering.
+
+I then used the vehicle model to find a Kp Kd combination that doesn't overshoot but allows for Kd to be smaller.
+
+I chose Kp = 0.04 and lowered Kd = 1
+![PD0041straightslowoncurves](images/PD0041straightslowoncurves.JPG)
+
+In the simulator the vehicle is still able to drive on a straight line, but it is too slow to turn on curves and gets the car off the track.
+
+I kept tuning the parameters from this point by trial and error. Got a pair Kp = 0.1 and Kd = 1.2 that seems like a good compromise. These are my final tuned values.
+
+## Controlling The Velocity
+
+
+## Simulation Video
