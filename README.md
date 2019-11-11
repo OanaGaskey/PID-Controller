@@ -20,7 +20,7 @@ PID is a closed loop feedback controller. It produces a control value based on t
 
 ![PIDeq](images/PIDeq.JPG) 
 
-In the equation above `e(t)` is the error. Let's say the car's desired position is in the middle of the lane and its current position is 2m to the right. The error in this case is 2m. 
+In the equation above `u(t)` is the control value and `e(t)` is the error. Let's say the car's desired position is in the middle of the lane and its current position is 2m to the right. The error in this case is 2m. 
 
 `Kp` is the proportional gain. Using `Kp` the car will steer left while moving forward down the road. The steering value will be large at the begining as the error is large. As the car approaches the desired centered position, the steering angle approaches zero. When the car is in the middle of the road the steering angle is zero. Even so, the car will keep going left since it is still slightly facing that way.
 The `Kp` component of the controller helps steer the car in the correct direction. Using `Kp` alone in an inertial system like a car leads to oversteer. With this, the car will drive in an S shape along the desired trajectory.
@@ -48,6 +48,7 @@ double PID::TotalError() {
   return total_error;  // TODO: Add your total error calc here!
 }
 ```
+
 Printing out the decomposition of the control value is useful for debugging when choosing the right `Kp`, `Kd` and `Ki` values.
 
 The `p_error`, `i_error` and `d_error` are calculated below. The `p_error` is the straight value taken from the feedback loop. It represents the difference between the desired system state and its current state. `d_error`, or the derivate, is simply the substraction between the previous error and the current one.  `i_error`, or the integral, is the sum of errors over time.
@@ -94,6 +95,7 @@ I changed the vehicle's length to 4 meters and used the motion model in the clas
 ![PD4m](images/PD4m.JPG) 
 
 `Kp = 0.5` and `Kd = 2.5` seem to provide a good vehicle trajectory in following a reference line.
+
 ![PD0525worksonplotunstabledriving](images/PD0525worksonplotunstabledriving.JPG)
 
 I plugged these values into the implementation and started the simulator. The vehicle was very unstable, the oscilations were strong, and the car was not even able to drive on a straight line.
@@ -122,6 +124,7 @@ The remaining problem is that it becomes very unstable in curves. I took a look 
 I then used the vehicle model to find a `Kp` `Kd` combination that doesn't overshoot, but allows for `Kd` to be smaller.
 
 I chose `Kp = 0.04` and lowered `Kd = 1`.
+
 ![PD0041straightslowoncurves](images/PD0041straightslowoncurves.JPG)
 
 In the simulator the vehicle is still able to drive on a straight line, but it is too slow to turn into curves and the car gets off the track.
