@@ -1,5 +1,5 @@
 # PID-Controller
-Proportional Integral Derivative algorithm to smoothly control a car's direction and velocity through steering angle and throttle actuators.
+Proportional Integral Derivative algorithm to control a car's direction and velocity through steering angle and throttle actuators.
 
 ![PIDController](images/PIDController.gif)
 
